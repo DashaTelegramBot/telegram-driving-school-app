@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getTelegramInitData } from './telegram';
 
 // Замените на URL вашего backend (после запуска Cloudflare Tunnel)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://c931a52e12a04a3b786a4b97744c883e.serveo.net';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
