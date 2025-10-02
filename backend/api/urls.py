@@ -1,16 +1,10 @@
-from django.urls import path, include
+from django.urls import path
 from . import views
-from rest_framework.routers import DefaultRouter
-
-router = DefaultRouter()
 
 urlpatterns = [
     # Auth endpoints
     path('auth/login/', views.login, name='login'),
     path('auth/me/', views.get_me, name='get_me'),
-
-    path('', include(router.urls)),
-    path('auth/', include('authentication.urls')),
     
     # Slots endpoints
     path('slots/', views.get_slots, name='get_slots'),
