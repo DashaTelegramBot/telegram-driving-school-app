@@ -32,9 +32,18 @@ const StudentDashboard = () => {
   const loadStats = async () => {
     try {
       const response = await studentsAPI.getStats();
+      console.log('📊 Stats response:', response.data);
       setStats(response.data);
     } catch (error) {
       console.error('Ошибка загрузки статистики:', error);
+      // Устанавливаем статистику по умолчанию при ошибке
+      setStats({
+        total_hours: 0,
+        completed_lessons: 0,
+        total_lessons: 10,
+        additional_lessons: 0,
+        progress_percentage: 0,
+      });
     }
   };
 
@@ -43,9 +52,13 @@ const StudentDashboard = () => {
       setLoading(true);
       const dateStr = selectedDate.toISOString().split('T')[0];
       const response = await slotsAPI.getAll({ date: dateStr });
-      setAvailableSlots(response.data.filter(slot => slot.is_available));
+      console.log('📅 Available slots response:', response.data);
+      // Проверяем, что response.data является массивом
+      const slots = Array.isArray(response.data) ? response.data : [];
+      setAvailableSlots(slots.filter(slot => slot.is_available));
     } catch (error) {
       console.error('Ошибка загрузки слотов:', error);
+      setAvailableSlots([]);
     } finally {
       setLoading(false);
     }
@@ -54,9 +67,12 @@ const StudentDashboard = () => {
   const loadMyBookings = async () => {
     try {
       const response = await bookingsAPI.getStudentSchedule();
-      setMyBookings(response.data);
+      console.log('📋 My bookings response:', response.data);
+      // Проверяем, что response.data является массивом
+      setMyBookings(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Ошибка загрузки расписания:', error);
+      setMyBookings([]);
     }
   };
 
@@ -92,14 +108,18 @@ const StudentDashboard = () => {
     }
   };
 
-  const progressData = stats ? {
+  // Создаем безопасные данные для графика
+  const progressData = {
     labels: ['Пройдено', 'Осталось'],
     datasets: [{
-      data: [stats.completed_lessons, stats.total_lessons - stats.completed_lessons],
+      data: [
+        stats?.completed_lessons || 0, 
+        (stats?.total_lessons || 10) - (stats?.completed_lessons || 0)
+      ],
       backgroundColor: ['hsl(var(--success))', 'hsl(var(--muted))'],
       borderWidth: 0,
     }]
-  } : null;
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
@@ -218,74 +238,68 @@ const StudentDashboard = () => {
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4">
-            {stats && (
-              <>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Пройдено часов
-                      </CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.total_hours}</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Прогресс
-                      </CardTitle>
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {stats.completed_lessons} / {stats.total_lessons}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {stats.progress_percentage.toFixed(0)}% завершено
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Доп. занятия
-                      </CardTitle>
-                      <Award className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.additional_lessons}</div>
-                    </CardContent>
-                  </Card>
-                </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Пройдено часов
+                  </CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.total_hours || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Прогресс
+                  </CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats?.completed_lessons || 0} / {stats?.total_lessons || 10}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {((stats?.completed_lessons || 0) / (stats?.total_lessons || 10) * 100).toFixed(0)}% завершено
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Доп. занятия
+                  </CardTitle>
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.additional_lessons || 0}</div>
+                </CardContent>
+              </Card>
+            </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Прогресс обучения</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex justify-center">
-                    {progressData && (
-                      <div className="w-64 h-64">
-                        <Doughnut
-                          data={progressData}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            plugins: {
-                              legend: {
-                                position: 'bottom',
-                              },
-                            },
-                          }}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </>
-            )}
+            <Card>
+              <CardHeader>
+                <CardTitle>Прогресс обучения</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-center">
+                <div className="w-64 h-64">
+                  <Doughnut
+                    data={progressData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: true,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -1,33 +1,66 @@
 import axios from 'axios';
-import { getTelegramInitData } from './telegram';
 
-// Замените на URL вашего backend (после запуска Cloudflare Tunnel)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://c931a52e12a04a3b786a4b97744c883e.serveo.net';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+console.log('API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
 });
 
-// Добавляем Telegram initData в каждый запрос
+// Interceptors
 api.interceptors.request.use((config) => {
-  const initData = getTelegramInitData();
-  if (initData) {
-    config.headers['X-Telegram-Init-Data'] = initData;
+  console.log('🚀 Making API Request:', {
+    method: config.method,
+    url: config.url,
+    baseURL: config.baseURL,
+    data: config.data
+  });
+  
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response Success:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.log('❌ API Response Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+      response: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
+
+// Interfaces
 export interface User {
   id: number;
-  telegram_id: number;
+  telegram_id?: number;
   first_name: string;
   last_name?: string;
   phone?: string;
   role: 'student' | 'instructor' | 'admin';
   instructor_id?: number;
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
 }
 
 export interface Slot {
@@ -50,15 +83,6 @@ export interface Booking {
   created_at: string;
 }
 
-export interface Review {
-  id: number;
-  booking: number;
-  rating: number;
-  comment: string;
-  duration: 'short' | 'long';
-  created_at: string;
-}
-
 export interface StudentStats {
   total_hours: number;
   completed_lessons: number;
@@ -67,8 +91,10 @@ export interface StudentStats {
   progress_percentage: number;
 }
 
+// API methods
 export const authAPI = {
-  login: () => api.post<User>('/auth/login/'),
+  login: (data: { phone: string; password: string; role: string }) => 
+    api.post<LoginResponse>('/auth/login/', data),
   getMe: () => api.get<User>('/auth/me/'),
 };
 
@@ -114,5 +140,14 @@ export const instructorAPI = {
     additional_lessons?: number;
   }) => api.patch(`/instructor/students/${studentId}/stats/`, data),
 };
+
+export interface Review {
+  id: number;
+  booking: number;
+  rating: number;
+  comment: string;
+  duration: 'short' | 'long';
+  created_at: string;
+}
 
 export default api;

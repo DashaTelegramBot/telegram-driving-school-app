@@ -1,30 +1,34 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+// src/App.tsx
+import React, { useEffect } from "react";
+import { RouterProvider } from "@tanstack/react-router";
+import { initTelegramWebApp } from "@/lib/telegram";
 
-const queryClient = new QueryClient();
+interface AppProps {
+  router: any; // Замените 'any' на соответствующий тип, если необходимо
+}
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App({ router }: AppProps) {
+  useEffect(() => {
+    try {
+      console.log('🔄 Инициализация Telegram WebApp...');
+      const webApp = initTelegramWebApp();
+      console.log('✅ Telegram WebApp инициализирован:', webApp);
+      webApp.setBackgroundColor('#1C1A1B');
+      webApp.setHeaderColor('#1C1A1B');
+      console.log('🎨 Цвета Telegram WebApp установлены');
+    } catch (error) {
+      console.error('❌ Ошибка инициализации Telegram WebApp:', error);
+    }
+  }, []);
+
+  return (
+    <RouterProvider router={router} />
+  );
+}
 
 export default App;
+
+
+
+
+

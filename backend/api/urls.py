@@ -1,13 +1,17 @@
 from django.urls import path
 from . import views
 
+app_name = 'api'
+
 urlpatterns = [
+    path('health/', views.health_check, name='api_health'),
     # Auth endpoints
     path('auth/login/', views.login, name='login'),
     path('auth/me/', views.get_me, name='get_me'),
     
     # Slots endpoints
     path('slots/', views.get_slots, name='get_slots'),
+    path('slots/create/', views.create_slot, name='create_slot'),
     path('slots/bulk-create/', views.bulk_create_slots, name='bulk_create_slots'),
     path('slots/<int:slot_id>/', views.delete_slot, name='delete_slot'),
     
